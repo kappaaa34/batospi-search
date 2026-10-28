@@ -217,12 +217,17 @@ const DEFAULT_SHOPS = [
     shipping: '不明', pickup: '不明' },
   { id: 'surugaya', name: '駿河屋', url: 'https://www.suruga-ya.jp/search?search_word={q}', charset: 'UTF-8', on: false,
     shipping: '不明', pickup: '不明' },
-  { id: 'mercari', name: 'メルカリ', url: 'https://jp.mercari.com/search?keyword={q}&status=on_sale', charset: 'UTF-8', on: false,
+  { id: 'mercari', name: 'メルカリ', url: 'https://jp.mercari.com/search?keyword=バトルスピリッツ%20{q}&status=on_sale', charset: 'UTF-8', on: false,
     shipping: '出品者による（送料込みが多い）', pickup: '×' },
   { id: 'magi', name: 'magi', url: 'https://magi.camp/items/search?forms_search_items%5Bkeyword%5D={q}', charset: 'UTF-8', on: false,
     shipping: '出品者による', pickup: '×' },
 ];
 const CHARSETS = ['UTF-8', 'EUC-JP', 'Shift_JIS'];
+
+// 以前の初期URL。保存済みの設定がこのままなら、今の初期URLに置き換える（自分で書き換えたURLはそのまま）
+const OLD_DEFAULT_URLS = {
+  mercari: ['https://jp.mercari.com/search?keyword={q}&status=on_sale'],
+};
 
 function load(key, fallback) {
   try {
@@ -262,9 +267,10 @@ if (savedShops) {
 // あとから分かった初期値（バトスキのURL・文字コード、送料・店舗受取）を補う
 shops = shops.map((s) => {
   const def = DEFAULT_SHOPS.find((d) => d.id === s.id);
+  const outdated = OLD_DEFAULT_URLS[s.id]?.includes(s.url);
   return {
     ...s,
-    url: s.url || def?.url || '',
+    url: (outdated ? def.url : s.url) || def?.url || '',
     charset: s.charset || def?.charset || 'UTF-8',
     shipping: s.shipping ?? def?.shipping ?? '',
     pickup: s.pickup ?? def?.pickup ?? '',
@@ -333,9 +339,12 @@ function encodeQuery(q, charset) {
 }
 
 // {q} をカード名に置き換えた検索URL。未設定・http(s)以外は null
+// URL に直接書いた日本語やスペース（例：メルカリの「バトルスピリッツ」）も %XX にしておく。
+// 日本語のままだと、Claude のアプリなど別のアプリから Chrome に渡したときに化けて検索できない
 function searchUrl(shop, q) {
   if (!shop.url || !/^https?:\/\//.test(shop.url)) return null;
-  return shop.url.replace(/\{q\}/g, encodeQuery(q, shop.charset));
+  const literal = (s) => s.replace(/ /g, '%20').replace(/[^\x00-\x7F]+/g, (m) => encodeQuery(m, shop.charset));
+  return shop.url.split('{q}').map(literal).join(encodeQuery(q, shop.charset));
 }
 
 // ---- 検索リンク ----
