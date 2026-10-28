@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>バトスピ価格比較</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1d2330;
+    --muted: #6b7280;
+    --line: #e2e5ea;
+    --input: #ffffff;
+    --accent: #c2410c;
+    --accent-text: #ffffff;
+    --warn: #b45309;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #13151a;
+      --card: #1c1f26;
+      --text: #e7e9ee;
+      --muted: #9aa1ad;
+      --line: #2e323b;
+      --input: #242831;
+      --accent: #f97316;
+      --accent-text: #1a1a1a;
+      --warn: #fbbf24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    line-height: 1.5;
+  }
+  main { max-width: 900px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 22px; margin: 4px 0 16px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  input[type=text], input[type=search], select {
+    font: inherit;
+    color: inherit;
+    background: var(--input);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 10px;
+    min-width: 0;
+    width: 100%;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button {
+    font: inherit;
+    color: inherit;
+    background: var(--input);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { border-color: var(--muted); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.small { padding: 4px 8px; font-size: 13px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .warn { color: var(--warn); font-size: 13px; }
+
+  .search-form { display: flex; gap: 8px; }
+  .search-form input { flex: 1; font-size: 17px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 14px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  button.chip { background: none; cursor: pointer; }
+  button.chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.off { color: var(--muted); border-style: dashed; }
+  button.chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  #notice { margin-top: 8px; }
+  .table-wrap { overflow-x: auto; }
+  .shop-info { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .shop-info th.group { padding-top: 12px; }
+  .info-note { margin: 10px 0 0; }
+  .shop-info th, .shop-info td { text-align: left; padding: 5px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+  .shop-info th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .shop-info td:first-child { white-space: nowrap; font-weight: 600; }
+  .shop-info .none { color: var(--muted); }
+  #hint { margin: 10px 0 4px; }
+  .mode { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; font-size: 14px; }
+  .mode label { cursor: pointer; }
+
+  .history-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+  .history-head h2 { margin: 0; }
+  .history { display: flex; flex-wrap: wrap; gap: 8px; }
+  .history .muted { margin: 0; }
+  .history-item { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; }
+  .history-item:hover { border-color: var(--accent); }
+  .history-item button { border: none; background: none; border-radius: 999px; padding: 4px 4px 4px 12px; font-size: 14px; }
+  .history-item button.remove { padding: 4px 10px 4px 6px; color: var(--muted); }
+  .history-item button.remove:hover { color: var(--accent); }
+  .history-note { margin: 12px 0 0; }
+
+  details > summary { cursor: pointer; font-weight: 600; font-size: 16px; }
+  details[open] > summary { margin-bottom: 12px; }
+  .shop-row { display: grid; grid-template-columns: auto 110px 1fr 110px auto; gap: 6px 8px; align-items: center; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .shop-row .shipping { grid-column: 2 / 4; }
+  .shop-row .pickup { grid-column: 4 / 6; }
+  .shop-row .warn { grid-column: 2 / 6; }
+  .shop-row .warn:empty { display: none; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  @media (max-width: 560px) {
+    .shop-row { grid-template-columns: auto 1fr 110px auto; grid-auto-flow: dense; }
+    .shop-row .url, .shop-row .shipping, .shop-row .pickup, .shop-row .warn { grid-column: 1 / 5; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>バトスピ価格比較</h1>
+
+  <section>
+    <form id="search-form" class="search-form">
+      <input id="q" type="search" placeholder="カード名（例：ジークヴルム）" list="card-names" autocomplete="off">
+      <datalist id="card-names"></datalist>
+      <button type="submit" class="primary">検索</button>
+    </form>
+    <div id="links" class="links"></div>
+    <p class="muted" id="hint"></p>
+    <div class="mode">
+      <span class="muted">タブの開き方：</span>
+      <label><input type="radio" name="mode" value="perShop"> ショップごとのタブ</label>
+      <label><input type="radio" name="mode" value="single"> 1つのタブで切り替え</label>
+    </div>
+    <div id="notice" class="warn"></div>
+  </section>
+
+  <section>
+    <div class="history-head">
+      <h2>検索履歴</h2>
+      <button type="button" class="small" id="clear-history">全部消す</button>
+    </div>
+    <div id="history" class="history"></div>
+    <p class="muted history-note">検索してから2週間たった履歴は、自動で消えます。</p>
+  </section>
+
+  <section>
+    <details open>
+      <summary>送料・店舗受取</summary>
+      <div class="table-wrap"><table id="shop-info" class="shop-info"></table></div>
+      <p class="muted info-note">書き換えるときは、下の「ショップ設定」から。</p>
+    </details>
+  </section>
+
+  <section>
+    <details id="settings">
+      <summary>ショップ設定</summary>
+      <p class="muted">検索URLのカード名が入る位置に <code>{q}</code> と書きます。チェックを付けたショップは「検索」で開きます（検索欄の下のショップ名を押しても切り替わります）。検索すると関係ない商品ばかり出るショップは、文字コードを EUC-JP や Shift_JIS に変えると直ることがあります（バトスキは EUC-JP）。</p>
+      <p class="muted">送料・店舗受取は、最初から入っている分は2026年10月に各ショップのご利用ガイドで調べた内容です。変わることがあるので、注文前にショップでも確かめてください。店舗受取は「×」か、受け取れる場所（例：渋谷）を書きます。</p>
+      <div id="shop-rows"></div>
+      <div class="actions">
+        <button type="button" id="add-shop">ショップを追加</button>
+        <button type="button" id="reset-shops">初期設定に戻す</button>
+      </div>
+    </details>
+  </section>
+</main>
+
+<script>
+const KEY_SHOPS = 'bsps.shops';
+const KEY_MODE = 'bsps.mode';
+const KEY_HISTORY = 'bsps.history';
+const KEY_KNOWN = 'bsps.knownShops';
+const KEY_SINGLE = 'bsps.singleShop';
+
+const HISTORY_DAYS = 14;
+const HISTORY_MAX = 20;
+const DAY = 24 * 60 * 60 * 1000;
+
+// charset: 検索語を渡すときの文字コード（バトスキは EUC-JP でないと文字化けする）
+// shipping / pickup: 送料と店舗受け取り（2026年10月に各ショップのご利用ガイドで調べた値。pickup は × か受け取れる場所）
+const DEFAULT_SHOPS = [
+  { id: 'hbst', name: 'ホビステ', url: 'https://www.hobbystation-single.jp/bs/product/list?search_word={q}&match_type=1', charset: 'UTF-8', on: true,
+    shipping: 'ネコポス220円 / 宅急便750円（注文は1,000円から）', pickup: '秋葉原' },
+  { id: 'dorasuta', name: 'ドラスタ', url: 'https://dorasuta.jp/battlespirits/product-list?kw={q}', charset: 'UTF-8', on: true,
+    shipping: '不明', pickup: '不明' },
+  { id: 'tierone', name: 'ティアワン', url: 'https://tier-one.jp/view/search?search_keyword={q}', charset: 'UTF-8', on: true,
+    shipping: 'ゆうパケット250円（5,000円以上無料）/ ゆうパック600円（15,000円以上無料）', pickup: '渋谷' },
+  { id: 'batosuki', name: 'バトスキ', url: 'https://batosuki.shop/?mode=srh&field=product_name&keyword={q}', charset: 'EUC-JP', on: true,
+    shipping: 'ゆうパケット200円（1万円以上無料）/ ゆうパック700円', pickup: '名古屋・大須' },
+  { id: 'yuyutei', name: '遊々亭', url: 'https://yuyu-tei.jp/sell/bs/s/search?search_word={q}', charset: 'UTF-8', on: true,
+    shipping: '全品無料（宅配便の時間指定は別料金）', pickup: '不明' },
+  { id: 'cardrush', name: 'カードラッシュ', url: 'https://www.cardrush-bs.jp/product-list?keyword={q}', charset: 'UTF-8', on: true,
+    shipping: 'ゆうパケット180円〜（厚さで変わる）', pickup: '秋葉原（首都圏の住所のみ）' },
+  { id: 'fullahead', name: 'フルアヘッド', url: 'https://fullahead-tcg.com/shop/shopbrand.html?search={q}', charset: 'EUC-JP', on: false,
+    shipping: 'ゆうパケット180円（5,500円以上無料）/ 宅配便600円（11,000円以上無料）', pickup: 'あり（場所不明）' },
+  { id: 'torezamu', name: 'トレカ侍', url: 'https://www.torezamu.com/?mode=srh&keyword={q}', charset: 'EUC-JP', on: false,
+    shipping: 'ゆうパケット（料金不明）/ 枚数が多いと宅急便コンパクト450円', pickup: 'あり（2号店・場所不明）' },
+  { id: 'clabo', name: 'カードラボ', url: 'https://www.c-labo-online.jp/product-list?keyword={q}', charset: 'UTF-8', on: false,
+    shipping: '宅配便（地域で変わる）', pickup: '秋葉原ほか全国の店舗' },
+  { id: 'bigweb', name: 'BIGWEB', url: 'https://www.bigweb.co.jp/ja/products/bs/list?name={q}', charset: 'UTF-8', on: false,
+    shipping: '不明', pickup: '不明' },
+  { id: 'surugaya', name: '駿河屋', url: 'https://www.suruga-ya.jp/search?search_word={q}', charset: 'UTF-8', on: false,
+    shipping: '不明', pickup: '不明' },
+  { id: 'mercari', name: 'メルカリ', url: 'https://jp.mercari.com/search?keyword={q}&status=on_sale', charset: 'UTF-8', on: false,
+    shipping: '出品者による（送料込みが多い）', pickup: '×' },
+  { id: 'magi', name: 'magi', url: 'https://magi.camp/items/search?forms_search_items%5Bkeyword%5D={q}', charset: 'UTF-8', on: false,
+    shipping: '出品者による', pickup: '×' },
+];
+const CHARSETS = ['UTF-8', 'EUC-JP', 'Shift_JIS'];
+
+function load(key, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+}
+
+// 使わなくなった古いデータは残さない
+// （bsps.seenDefaults は、追加したショップを保存し忘れたまま「追加済み」とだけ記録していた旧版のもの）
+try {
+  localStorage.removeItem('bsps.memos');
+  localStorage.removeItem('bsps.last');
+  localStorage.removeItem('bsps.seenDefaults');
+} catch (e) {}
+
+// ショップ一覧と「どの初期ショップまで反映したか」は必ず一緒に保存する
+function storeShops() {
+  save(KEY_SHOPS, shops);
+  save(KEY_KNOWN, DEFAULT_SHOPS.map((d) => d.id));
+}
+
+const savedShops = load(KEY_SHOPS, null);
+let shops = savedShops || structuredClone(DEFAULT_SHOPS);
+if (savedShops) {
+  // 初期設定にあとから足したショップを、保存済みの設定にも追加する（自分で消したものは戻さない）
+  const known = load(KEY_KNOWN, ['hbst', 'dorasuta', 'tierone', 'batosuki', 'yuyutei']);
+  for (const d of DEFAULT_SHOPS) {
+    if (!known.includes(d.id) && !shops.some((s) => s.id === d.id)) shops.push(structuredClone(d));
+  }
+}
+// あとから分かった初期値（バトスキのURL・文字コード、送料・店舗受取）を補う
+shops = shops.map((s) => {
+  const def = DEFAULT_SHOPS.find((d) => d.id === s.id);
+  return {
+    ...s,
+    url: s.url || def?.url || '',
+    charset: s.charset || def?.charset || 'UTF-8',
+    shipping: s.shipping ?? def?.shipping ?? '',
+    pickup: s.pickup ?? def?.pickup ?? '',
+  };
+});
+if (savedShops) storeShops();
+let searchHistory = load(KEY_HISTORY, []);
+
+const $ = (sel) => document.querySelector(sel);
+const qInput = $('#q');
+
+function el(tag, props = {}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k in e) e[k] = v;
+    else e.setAttribute(k, v);
+  }
+  for (const c of children.flat()) if (c != null) e.append(c);
+  return e;
+}
+
+// ショップによって大文字/小文字・全角/半角を区別するので、半角・大文字にそろえて渡す
+// 例：「ノヴァ　ｘｖ」→「ノヴァ XV」（ホビステは小文字の xv だと0件になる）
+function normalize(s) {
+  return s.normalize('NFKC').replace(/[a-z]/g, (c) => c.toUpperCase()).replace(/\s+/g, ' ').trim();
+}
+
+function query() { return normalize(qInput.value); }
+
+// 文字 → バイト列の表。EUC-JP / Shift_JIS は JS に変換機能がないので、
+// ブラウザの TextDecoder で全コードを一度デコードして逆引き表を作る（初回だけ）
+const byteTables = {};
+function byteTable(charset) {
+  if (byteTables[charset]) return byteTables[charset];
+  const dec = new TextDecoder(charset);
+  const map = new Map();
+  const add = (bytes) => {
+    const ch = dec.decode(new Uint8Array(bytes));
+    if (ch.length === 1 && ch !== '�' && !map.has(ch)) map.set(ch, bytes);
+  };
+  if (charset === 'EUC-JP') {
+    for (let b = 0xA1; b <= 0xDF; b++) add([0x8E, b]);
+    for (let a = 0xA1; a <= 0xFE; a++) for (let b = 0xA1; b <= 0xFE; b++) add([a, b]);
+  } else {
+    for (let b = 0xA1; b <= 0xDF; b++) add([b]);
+    for (let a = 0x81; a <= 0xFC; a++) {
+      if (a > 0x9F && a < 0xE0) continue;
+      for (let b = 0x40; b <= 0xFC; b++) if (b !== 0x7F) add([a, b]);
+    }
+  }
+  return (byteTables[charset] = map);
+}
+
+function encodeQuery(q, charset) {
+  if (!charset || charset === 'UTF-8') return encodeURIComponent(q);
+  const table = byteTable(charset);
+  let out = '';
+  for (const ch of q) {
+    if (ch.charCodeAt(0) < 0x80) { out += encodeURIComponent(ch); continue; }
+    const bytes = table.get(ch);
+    if (bytes) out += bytes.map((b) => '%' + b.toString(16).toUpperCase().padStart(2, '0')).join('');
+  }
+  return out;
+}
+
+// {q} をカード名に置き換えた検索URL。未設定・http(s)以外は null
+function searchUrl(shop, q) {
+  if (!shop.url || !/^https?:\/\//.test(shop.url)) return null;
+  return shop.url.replace(/\{q\}/g, encodeQuery(q, shop.charset));
+}
+
+// ---- 検索リンク ----
+// ショップ名のボタン。押してもサイトは開かず、「検索」で開くショップを選ぶだけ
+//   perShop: 押すたびに開く／開かないを切り替える（ショップ設定のチェックと同じもの）
+//   single: 開くショップを1つ選ぶ
+function renderLinks() {
+  const box = $('#links');
+  box.replaceChildren();
+  const single = singleShop();
+  for (const shop of shops) {
+    if (!searchUrl(shop, 'x')) {
+      box.append(el('span', { class: 'chip off', title: 'ショップ設定で検索URLを登録してください' }, `${shop.name}（URL未設定）`));
+      continue;
+    }
+    const selected = mode === 'single' ? shop === single : shop.on;
+    box.append(el('button', {
+      type: 'button',
+      class: 'chip' + (selected ? ' active' : ''),
+      'aria-pressed': String(selected),
+      title: `送料：${shop.shipping || '未入力'}\n店舗受取：${shop.pickup || '未入力'}`,
+      onclick: () => selectShop(shop),
+    }, shop.name));
+  }
+}
+
+function selectShop(shop) {
+  if (mode === 'single') {
+    singleShopId = shop.id;
+    save(KEY_SINGLE, singleShopId);
+    renderLinks();
+    return;
+  }
+  shop.on = !shop.on;
+  saveShops();
+  renderShopRows();
+}
+
+// タブの開き方
+//   perShop: ショップごとに1つのタブ / single: 結果用のタブ1つで切り替え
+let mode = load(KEY_MODE, 'perShop');
+if (mode !== 'single') mode = 'perShop';
+
+// 開いた結果タブ。閉じられるまで使い回す（single は 'result'、perShop はショップID）
+const tabs = {};
+
+// single で開くショップ。未選択なら、チェックの付いた最初のショップ
+let singleShopId = load(KEY_SINGLE, null);
+function singleShop() {
+  const usable = shops.filter((s) => searchUrl(s, 'x'));
+  return usable.find((s) => s.id === singleShopId) || usable.find((s) => s.on) || usable[0];
+}
+
+// front: そのタブを前面に出す。Chrome は別タブの focus() を無視するので、
+// 新しいタブで開き直して古いタブを閉じる（タブの数は変わらない）
+function openInTab(key, url, front = false) {
+  const old = tabs[key];
+  const alive = old && !old.closed;
+  if (alive && !front) {
+    old.location.href = url;
+    return true;
+  }
+  const w = window.open(url, alive ? '_blank' : 'bs_' + key);
+  if (w && alive) old.close();
+  if (w) tabs[key] = w;
+  return !!w;
+}
+
+// 検索ボタン：perShop は選んだショップのタブを全部開く（2回目からは中身だけ入れ替え）
+// single は選んだ1ショップを結果用タブで前面に開く
+function searchFromForm() {
+  const q = query();
+  if (!q) { qInput.focus(); return; }
+  qInput.value = q;
+  addHistory(q);
+  if (mode === 'single') {
+    const shop = singleShop();
+    if (shop) setBlockedNotice(openInTab('result', searchUrl(shop, q), true) ? 0 : 1);
+    return;
+  }
+  const targets = shops.filter((s) => s.on && searchUrl(s, q));
+  if (!targets.length) {
+    $('#notice').textContent = '開くショップが選ばれていません。ショップ名を押して選んでください。';
+    return;
+  }
+  setBlockedNotice(targets.filter((s) => !openInTab(s.id, searchUrl(s, q))).length);
+}
+
+function setBlockedNotice(blocked) {
+  $('#notice').textContent = blocked
+    ? `ブラウザにタブを ${blocked} 件止められました。アドレスバー右端のアイコンからポップアップを「常に許可」にすると、次から一度に開きます。それまではショップのボタンで1つずつ開けます。`
+    : '';
+}
+
+function renderMode() {
+  for (const r of document.querySelectorAll('input[name=mode]')) r.checked = r.value === mode;
+  $('#hint').textContent = mode === 'single'
+    ? 'ショップ名を押して開くショップを1つ選び、「検索」を押すと結果用のタブ（1つだけ）に表示します。'
+    : 'ショップ名を押すと「検索」で開くかどうかが切り替わります（色付き＝開く）。別のカードを検索しても、同じタブの中身が入れ替わるだけです。';
+}
+
+for (const r of document.querySelectorAll('input[name=mode]')) {
+  r.addEventListener('change', () => {
+    mode = r.value;
+    save(KEY_MODE, mode);
+    setBlockedNotice(0);
+    renderMode();
+    renderLinks();
+  });
+}
+
+// ---- 検索履歴 ----
+// 新しい順。最後に検索してから HISTORY_DAYS 日たったものは消す
+function pruneHistory() {
+  const now = Date.now();
+  const kept = searchHistory.filter((h) => now - h.at < HISTORY_DAYS * DAY).slice(0, HISTORY_MAX);
+  if (kept.length !== searchHistory.length) {
+    searchHistory = kept;
+    save(KEY_HISTORY, searchHistory);
+  }
+}
+
+function addHistory(q) {
+  searchHistory = [{ q, at: Date.now() }, ...searchHistory.filter((h) => h.q !== q)];
+  save(KEY_HISTORY, searchHistory);
+  renderHistory();
+}
+
+function removeHistory(q) {
+  searchHistory = searchHistory.filter((h) => h.q !== q);
+  save(KEY_HISTORY, searchHistory);
+  renderHistory();
+}
+
+function renderHistory() {
+  pruneHistory();
+  const box = $('#history');
+  box.replaceChildren();
+  if (!searchHistory.length) box.append(el('p', { class: 'muted' }, 'まだ履歴はありません。'));
+  for (const h of searchHistory) {
+    const daysLeft = Math.ceil((h.at + HISTORY_DAYS * DAY - Date.now()) / DAY);
+    box.append(el('span', { class: 'history-item' },
+      el('button', {
+        type: 'button', title: `あと${daysLeft}日で消えます`,
+        onclick: () => { qInput.value = h.q; qInput.focus(); },
+      }, h.q),
+      el('button', {
+        type: 'button', class: 'remove', title: '履歴から消す', 'aria-label': `${h.q} を履歴から消す`,
+        onclick: () => removeHistory(h.q),
+      }, '×'),
+    ));
+  }
+  $('#card-names').replaceChildren(...searchHistory.map((h) => el('option', { value: h.q })));
+  $('#clear-history').disabled = !searchHistory.length;
+}
+
+$('#clear-history').addEventListener('click', () => {
+  if (!confirm('検索履歴を全部消しますか？')) return;
+  searchHistory = [];
+  save(KEY_HISTORY, searchHistory);
+  renderHistory();
+});
+
+// ---- ショップ設定 ----
+function saveShops() {
+  storeShops();
+  renderLinks();
+  renderShopInfo();
+}
+
+// 全ショップの送料・店舗受取の一覧（「検索」で一度に開くショップが先、「ほか」は後ろ）
+function renderShopInfo() {
+  const cell = (v) => {
+    if (!v) return el('td', { class: 'none' }, '未入力');
+    if (v === '不明' || /^[×xX✕]$/.test(v)) return el('td', { class: 'none' }, v);
+    return el('td', {}, v);
+  };
+  const row = (s) => el('tr', {}, el('td', {}, s.name), cell(s.shipping), cell(s.pickup));
+  const others = shops.filter((s) => !s.on);
+  $('#shop-info').replaceChildren(
+    el('thead', {}, el('tr', {}, el('th', {}, ''), el('th', {}, '送料'), el('th', {}, '店舗受取'))),
+    el('tbody', {},
+      shops.filter((s) => s.on).map(row),
+      others.length && others.length < shops.length ? el('tr', {}, el('th', { class: 'group', colSpan: 3 }, 'ほか')) : null,
+      others.map(row),
+    ),
+  );
+}
+
+function renderShopRows() {
+  const box = $('#shop-rows');
+  box.replaceChildren();
+  for (const shop of shops) {
+    const warn = el('div', { class: 'warn' });
+    const checkWarn = () => {
+      warn.textContent = !shop.url ? '検索URLが未設定です'
+        : !/^https?:\/\//.test(shop.url) ? 'URLは https:// で始めてください'
+        : !shop.url.includes('{q}') ? 'URLに {q} がありません（カード名が入りません）' : '';
+    };
+    checkWarn();
+    box.append(el('div', { class: 'shop-row' },
+      el('input', { type: 'checkbox', checked: shop.on, title: '「検索」で開く',
+        onchange: (e) => { shop.on = e.target.checked; saveShops(); } }),
+      el('input', { type: 'text', value: shop.name, placeholder: 'ショップ名',
+        onchange: (e) => { shop.name = e.target.value.trim() || '無名'; saveShops(); } }),
+      el('input', { type: 'text', class: 'url', value: shop.url, placeholder: 'https://example.com/search?q={q}',
+        onchange: (e) => { shop.url = e.target.value.trim(); checkWarn(); saveShops(); } }),
+      el('select', { title: '検索語の文字コード', onchange: (e) => { shop.charset = e.target.value; saveShops(); } },
+        CHARSETS.map((c) => el('option', { value: c, selected: shop.charset === c }, c))),
+      el('button', { type: 'button', class: 'small', onclick: () => {
+        if (!confirm(`「${shop.name}」を削除しますか？`)) return;
+        shops = shops.filter((s) => s !== shop);
+        renderShopRows();
+        saveShops();
+      } }, '削除'),
+      el('input', { type: 'text', class: 'shipping', value: shop.shipping, placeholder: '送料（例：ゆうパケット250円、5,000円以上無料）', title: '送料',
+        onchange: (e) => { shop.shipping = e.target.value.trim(); saveShops(); } }),
+      el('input', { type: 'text', class: 'pickup', value: shop.pickup, placeholder: '店舗受取（× か 場所）', title: '店舗受取',
+        onchange: (e) => { shop.pickup = e.target.value.trim(); saveShops(); } }),
+      warn,
+    ));
+  }
+}
+
+$('#add-shop').addEventListener('click', () => {
+  shops.push({ id: 's' + Date.now(), name: '新しいショップ', url: '', charset: 'UTF-8', on: true, shipping: '', pickup: '' });
+  renderShopRows();
+  saveShops();
+});
+$('#reset-shops').addEventListener('click', () => {
+  if (!confirm('ショップ設定を初期状態に戻しますか？')) return;
+  shops = structuredClone(DEFAULT_SHOPS);
+  renderShopRows();
+  saveShops();
+});
+
+// ---- 起動 ----
+$('#search-form').addEventListener('submit', (e) => { e.preventDefault(); searchFromForm(); });
+
+renderMode();
+renderLinks();
+renderShopInfo();
+renderHistory();
+renderShopRows();
+</script>
+</body>
+</html>
