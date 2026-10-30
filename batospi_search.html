@@ -160,6 +160,12 @@
   </section>
 
   <section>
+    <h2>Xのバトスピ投稿（アキバ）</h2>
+    <div id="x-links" class="links"></div>
+    <p class="muted history-note">Yahoo!リアルタイム検索で新しい順に開きます（ログイン不要）。ドラスタは「バトスピ」「バトルスピリッツ」を含む投稿だけに絞ります。投稿から数時間は、まだ出ないことがあります。</p>
+  </section>
+
+  <section>
     <details open>
       <summary>送料・店舗受取</summary>
       <div class="table-wrap"><table id="shop-info" class="shop-info"></table></div>
@@ -508,6 +514,27 @@ $('#clear-history').addEventListener('click', () => {
   renderHistory();
 });
 
+// ---- X ----
+// X の検索はログインが必要なので、ログインなしで見られる Yahoo!リアルタイム検索を使う
+// Yahoo は # なしの語だけだと直近の数日分が抜ける（# 付きならすぐ出る）ので、両方の書き方を入れる
+const BS_WORDS = '(#バトスピ OR #バトルスピリッツ OR バトスピ OR バトルスピリッツ)';
+
+// words: 絞り込みの語。総合アカウントはほかのカードゲームの投稿が多いので絞る（カードウィングスはバトスピ専用）
+const X_ACCOUNTS = [
+  { name: 'ドラスタ', id: 'ds_akiba', words: BS_WORDS },
+  { name: 'CARDWINGS', id: 'cwa_h', words: '' },
+];
+
+function xSearchUrl(account) {
+  const q = `ID:${account.id} ${account.words}`.trim();
+  return 'https://search.yahoo.co.jp/realtime/search?ei=UTF-8&p=' + encodeURIComponent(q);
+}
+
+function renderXLinks() {
+  $('#x-links').replaceChildren(...X_ACCOUNTS.map((a) =>
+    el('a', { class: 'chip', href: xSearchUrl(a), target: '_blank', rel: 'noopener' }, a.name)));
+}
+
 // ---- ショップ設定 ----
 function saveShops() {
   storeShops();
@@ -588,6 +615,7 @@ renderMode();
 renderLinks();
 renderShopInfo();
 renderHistory();
+renderXLinks();
 renderShopRows();
 </script>
 </body>
